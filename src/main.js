@@ -1,6 +1,8 @@
 import './style.css'
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {RGBELoader} from 'three/examples/jsm/loaders/RGBELoader';
 
 document.querySelector('#app').innerHTML = `
   <div>
@@ -22,16 +24,18 @@ function main() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setClearColor(0xffffff);
-  document.body.appendChild(renderer.domElement)
+  renderer.setClearColor(0x87CEFA);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1;
+  document.body.appendChild(renderer.domElement);
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
-  
+
   /*
     Init Camera
   */
   const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  camera.position.set(0, 0, 9);  
+  camera.position.set(0, 0, 2);  
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -40,11 +44,13 @@ function main() {
   /*
     Init Lights
   */
-  const ambientLight = new THREE.AmbientLight(0x666666);
+  // Ambient light to give overall lighting to the scene
+  const ambientLight = new THREE.AmbientLight(0x87CEFA, 1); // Decreased intensity slightly
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0xaaaaaa, 1);
-  dirLight.position.set(5, 12, 8);
+  // Directional light to simulate sunlight (higher intensity to brighten the scene)
+  const dirLight = new THREE.DirectionalLight(0x87CEFA,3); // Adjusted intensity
+  dirLight.position.set(0, 20, 0);
   dirLight.castShadow = true;
   dirLight.shadow.camera.near = 0.1;
   dirLight.shadow.camera.far = 200;
@@ -55,56 +61,74 @@ function main() {
   dirLight.shadow.mapSize.set(2048, 2048);
   dirLight.shadow.radius = 4;
   dirLight.shadow.bias = -0.00005;
-  
   scene.add(dirLight);  
 
+  // Hemisphere light (simulate ambient sky light)
+  const hemiLight = new THREE.HemisphereLight(0x87CEFA, 0x87CEFA, 0.3); // Light blue ambient sky color
+  hemiLight.color.setHSL(0.6, 1, 0.6);
+  hemiLight.groundColor.setHSL(0.095, 1, 0.75);
+  hemiLight.position.set(0, 50, 0);
+  scene.add(hemiLight);
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /*
-    Init Terrain
+    Init Terrains
   */
-  
-  const s = 100; // Size of the floor (width and depth)
-  const geo = new THREE.BoxGeometry(s, 0.25, s, 10, 10, 10); // Create the floor geometry
+  // Initialize the loader
+  const loader = new GLTFLoader();
 
-  // Load the grass texture
-  const textureLoader = new THREE.TextureLoader();
-  const grassTexture = textureLoader.load('/assets/textures/image/green-grass.jpg'); // Replace with the actual path
-
-  // Correct the aspect ratio of the texture to fit the floor
-  grassTexture.wrapS = THREE.RepeatWrapping; // Wrap horizontally
-  grassTexture.wrapT = THREE.RepeatWrapping; // Wrap vertically
-  grassTexture.repeat.set(s / 10, s / 10); // Scale the texture to fit the floor dimensions
-
-  // Create material with the grass texture
-  const mat = new THREE.MeshStandardMaterial({
-    map: grassTexture, // Apply the texture map
-  });
-
-  // Create the mesh and apply the material
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(0, -2, -1); // Set the position of the floor
-  mesh.receiveShadow = true; // Make sure the floor receives shadows
-  mesh.name = 'floating-floor'; // Name the mesh for reference
-  
-  // Add the floor mesh to the scene
-  scene.add(mesh);
-
+  // Load the model (your island)
+  loader.load(
+    '/assets/textures/gltf/scene.gltf', // Path to your glTF model (can be a .glb or .gltf file)
+    (gltf) => {
+      const mesh = gltf.scene;
+      mesh.traverse((child , index) => {
+          if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+          }
+          console.log(index)
+          if (index == 0) {
+            return
+          }
+      });
+      mesh.position.set(0,0,0);
+    
+      scene.add(gltf.scene); // Add the model's scene to the Three.js scene
+    },
+    (xhr) => {
+      console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+    },
+    (error) => {
+      console.error('An error happened', error);
+    }
+  );
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /*
-    Init Control
+    Init HDRI
+  */
+  const rgbeLoader = new RGBELoader();
+  rgbeLoader.load('/assets/hdr/qwantani_4k.hdr', (texture) => {
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    scene.environment = texture;
+    scene.background = texture; // Optional
+  });
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /*
+    Init Controls
   */
   const orbitControls = new OrbitControls(camera, renderer.domElement);
   orbitControls.enableZoom = true;
   orbitControls.enablePan = true;
-  
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
   window.addEventListener('resize', () => onWindowResize(camera, renderer));
   onWindowResize(camera, renderer);
 
-  
   animate(renderer, scene, camera);
 }
 
@@ -130,8 +154,6 @@ function onWindowResize(camera, renderer) {
  */
 function animate(renderer, scene, camera) {
   function renderLoop() {
-    const mesh = scene.getObjectByName('PointsMesh')
-   
     renderer.render(scene, camera);
     requestAnimationFrame(renderLoop);
   }
@@ -140,4 +162,3 @@ function animate(renderer, scene, camera) {
 }
 
 main()
-
