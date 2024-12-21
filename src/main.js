@@ -239,6 +239,50 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
+  // Add clouds
+const gltfLoaderCloud = new GLTFLoader();
+gltfLoaderCloud.load(
+  '/assets/cloud/scene.gltf',
+  (gltf) => {
+    const cloudMesh = gltf.scene;
+
+    // Adjust cloud size and position
+    cloudMesh.scale.set(10, 10, 10); // Scale down the cloud
+    cloudMesh.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = false; // Clouds don't cast shadows
+        child.receiveShadow = false; // Clouds don't receive shadows
+        child.material.transparent = true; // Make cloud material transparent
+        child.material.opacity = 0.5; // Reduce opacity for lighter rendering
+      }
+    });
+
+    // Position clouds closer to the terrain
+    cloudMesh.position.set(10, 20, 0); // Move clouds closer to the terrain
+    scene.add(cloudMesh);
+
+    // Optionally, add more clouds at different positions
+    for (let i = 0; i < 1; i++) {
+      const newCloud = cloudMesh.clone();
+      newCloud.position.set(
+        Math.random() * 100 - 50, // Random x position
+        20 + Math.random() * 10, // Random height closer to the terrain
+        Math.random() * 100 - 50 // Random z position
+      );
+      scene.add(newCloud);
+    }
+  },
+  (xhr) => {
+    console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
+  },
+  (error) => {
+    console.error('An error happened', error);
+  }
+);
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+
   // Hanlde Resize
   function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
