@@ -166,50 +166,6 @@ import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader.js';
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  /*
-    Add Animals or Trees
-  */
-  function addAnimalOrTree(scene, objPath, mtlPath, position, scale, rotation) {
-    const mtlLoader = new MTLLoader();
-    mtlLoader.load(mtlPath, (materials) => {
-      materials.preload();
-
-      const objLoader = new OBJLoader();
-      objLoader.setMaterials(materials);
-      objLoader.load(
-        objPath,
-        (obj) => {
-          obj.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-            }
-          });
-          obj.position.set(position.x, position.y, position.z);
-          obj.scale.set(scale.x, scale.y, scale.z);
-          obj.rotation.set(rotation.x, rotation.y, rotation.z);
-
-          scene.add(obj);
-        },
-        (xhr) => {
-          console.log(`Model ${objPath} ${(xhr.loaded / xhr.total) * 100}% loaded`);
-        },
-        (error) => {
-          console.error(`Gagal memuat model ${objPath}:`, error);
-        }
-      );
-    });
-  }
-
-  // Add animals
-  addAnimalOrTree(scene, '/assets/models/BEE.obj', '/assets/models/BEE.mtl', { x: 0, y: -0.03, z: 0 }, { x: 0.5, y: 0.5, z: 0.5 }, { x: Math.PI / 2, y: -80, z: -20.5 });
-  addAnimalOrTree(scene, '/assets/models/BEE.obj', '/assets/models/BEE.mtl', { x: 0.012, y: -0.03, z: 0 }, { x: 0.5, y: 0.5, z: 0.5 }, { x: Math.PI / 2, y: -80, z: -20.5 });
-  addAnimalOrTree(scene, '/assets/models/BEE.obj', '/assets/models/BEE.mtl', { x: 0.019, y: -0.03, z: 0.012 }, { x: 0.5, y: 0.5, z: 0.5 }, { x: Math.PI / 2, y: -80, z: -20.5 });
-
-  // Add tree
-  addAnimalOrTree(scene, '/assets/models/tree.obj', '/assets/models/tree.mtl', { x: -3, y: 0, z: 2 }, { x: 2, y: 2, z: 2 }, { x: 0, y: 0, z: 0 });
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////
 
   /*
   Init Controls
