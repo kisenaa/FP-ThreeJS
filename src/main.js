@@ -280,6 +280,28 @@ gltfLoaderCloud.load(
   }
 );
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Add ambience sound
+const listener = new THREE.AudioListener();
+camera.add(listener);
+
+// Create an audio object and load the background music
+const audio = new THREE.Audio(listener);
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load('/assets/sound/jungle-nature-229896.mp3', function(buffer) {
+    audio.setBuffer(buffer);
+    audio.setLoop(true);  // Set the music to loop
+    audio.setVolume(0.5); // Set the volume (0 to 1)
+    
+    // Wait for a user gesture to start the audio
+    const startAudio = () => {
+        audio.play(); // Play the background song
+        document.removeEventListener('click', startAudio); // Remove the event listener after playing
+    };
+
+    // Add a click event listener to resume the audio context
+    document.addEventListener('click', startAudio);
+});
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////
 
